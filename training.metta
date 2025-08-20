@@ -32,7 +32,7 @@
 ;;calling a function
 ;;(function-name p1 p2 p3 p4)
 (=(greet $name)(Hi $name))
-!(greet Stella)
+(greet Stella)
 
 ;; Parent name of parent child name
 (Parent Mary Lisa)
@@ -51,7 +51,7 @@
 (Person Lily F)
 
 ;; The people in the family tree
-!(unique (union 
+(unique (union 
     ;;get x first
         (unique (match &self (Parent $x $y) $x))
         ;;get y 
@@ -59,14 +59,55 @@
         ;;then unify
 ))
 ;;The people in the family tree -v2
-!(match &self (Person $n $g) $n)
+(match &self (Person $n $g) $n)
 
 
 ;;The parents of Smith
-!(match &self (Parent $p Smith) $p)
+(match &self (Parent $p Smith) $p)
+
+
+
+
+
+
+
+;;Uncle of Lily
+(unique(
+    (match &self (,
+    (Parent $parentname Lily)
+    (, (Parent $parentname1 $parentname) (Parent $parentname1 $childname1 )(Person $childname1 M) )
+)$childname1)
+))
+
+
+;;Son in law of Mary
+;;Who is a son-in-law ? a man married to any of Mary's daughter
+;;Get mary children who are daughters / female
+;;Get the children of Mary daughters
+;;Get their dad 
+;;Return their dad
+
+(match &self (,
+    (Parent Mary $child)
+    (Person $child F)
+    (Parent $child $child2)
+    (Parent $parentname $child2)
+    (Person $parentname M)
+
+) $parentname)
+
+
+;;Grand Parents of Lily
+(match &self (,
+   (Parent $parentname Lily)
+   (Parent $parentname1 $parentname)
+)$parentname1)
+
+
+
 
 ;;The siblings of Smith
-!(unique((match &self (,
+(unique((collapse match &self (,
     (Parent $parentname Smith)
     (Parent $parentname $childname)
 ) $childname)))
@@ -74,17 +115,31 @@
 
 
 
+;; Store siblings (all siblings first) then do Subtraction atom to remove Smith
 
-;;Uncle of Lily
-!(unique(
-    (match &self (,
-    (Parent $parentname Lily)
-    (, (Parent $parentname1 $parentname) (Parent $parentname1 $childname1 )(Person $childname1 M) )
-)$childname1)
-))
-;;Grand Parents of Lily
-!(match &self (,
-   (Parent $parentname Lily)
-   (Parent $parentname1 $parentname)
-)$parentname1)
-;;Son in law of Mary
+(=(getSiblings $subject)
+    ;; function body
+    ;;Store all siblings in the siblings variable including Smith
+    ;;Do a subtraction-atom to filter Smith out 
+    (let $siblings 
+        (collapse 
+        ( unique
+            ( match &self 
+                (,
+                    (Parent $parentname Smith)
+                    (Parent $parentname $childname)
+                           
+                ) 
+                 $childname
+            ) 
+
+         )
+        )
+        (subtraction-atom $siblings (Smith))
+
+    )
+        
+)
+
+!(getSiblings Smith)
+
